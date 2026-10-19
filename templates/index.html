@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gửi Nguyễn Bảo Châm 💕</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='avatars/bao_cham.jpg') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #ff4d6d;
+      --secondary: #ff758f;
+      --glass-bg: rgba(0, 0, 0, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Montserrat', sans-serif;
+      color: #fff;
+      user-select: none;
+    }
+
+    /* Ảnh nền mặc định đổi sang ảnh cá nhân của Bảo Châm */
+    .bg-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('/static/backgrounds/cham_bg.jpg');
+      background-size: cover;
+      background-position: center;
+      transition: background-image 0.8s ease-in-out;
+      z-index: 1;
+    }
+
+    .bg-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(20, 5, 30, 0.4) 0%, rgba(10, 0, 20, 0.75) 100%);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 2;
+    }
+
+    #canvas-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      padding: 25px 20px;
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+      transition: all 0.4s ease;
+      position: absolute;
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .glass-card.hidden {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+      pointer-events: none;
+    }
+
+    .tab1-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.8rem;
+      color: #ffb3c1;
+      margin-bottom: 8px;
+      text-shadow: 0 0 10px rgba(255, 77, 109, 0.6);
+    }
+
+    .tab1-sub {
+      font-size: 0.95rem;
+      color: #e0aaff;
+      margin-bottom: 22px;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .name-input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 50px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 1.05rem;
+      font-family: 'Montserrat', sans-serif;
+      outline: none;
+      text-align: center;
+    }
+
+    .name-input:focus {
+      border-color: var(--primary);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, #ff4d6d 0%, #c77dff 100%);
+      color: white;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
+    }
+
+    .tab2-container {
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card-header-img {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 3px solid var(--secondary);
+      object-fit: cover;
+      box-shadow: 0 0 20px rgba(255, 117, 143, 0.7);
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .recipient-name {
+      font-family: 'Dancing Script', cursive;
+      font-size: 2.2rem;
+      color: #ffb3c1;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .wishes-box {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      max-height: 48vh;
+      overflow-y: auto;
+      text-align: left;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      width: 100%;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #ff4d6d rgba(255, 255, 255, 0.05);
+    }
+
+    .wishes-box::-webkit-scrollbar {
+      width: 5px;
+    }
+    .wishes-box::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+    .wishes-box::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #ff4d6d, #c77dff);
+      border-radius: 10px;
+    }
+
+    .wishes-text {
+      font-size: 0.98rem;
+      line-height: 1.65;
+      color: #f8f9fa;
+      white-space: pre-line;
+      word-break: break-word;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background-color: var(--primary);
+      vertical-align: middle;
+      animation: blink 0.7s infinite;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    .audio-control {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="audioBtn" class="audio-control">🎵</div>
+
+  <div id="bgImage" class="bg-image"></div>
+  <div class="bg-overlay"></div>
+  <canvas id="canvas-bg"></canvas>
+
+  <div class="app-container">
+    <!-- TAB 1 -->
+    <div id="tab1" class="glass-card">
+      <h1 class="tab1-title">20 Tháng 10</h1>
+      <p class="tab1-sub">Dành tặng riêng Nguyễn Bảo Châm ❤️</p>
+      
+      <div class="input-group">
+        <input type="text" id="nameInput" class="name-input" placeholder="Nhập tên của bạn..." autocomplete="off">
+      </div>
+
+      <button id="btnStart" class="btn-submit">Mở Thư Ngay ✨</button>
+    </div>
+
+    <!-- TAB 2 -->
+    <div id="tab2" class="glass-card tab2-container hidden">
+      <img id="recipientImg" src="" alt="Avatar" class="card-header-img">
+      
+      <h2 id="recipientName" class="recipient-name">Gửi tới...</h2>
+
+      <div id="wishesBox" class="wishes-box">
+        <span id="wishesText" class="wishes-text"></span><span id="cursor" class="typing-cursor"></span>
+      </div>
+
+      <button onclick="location.reload()" class="btn-submit" style="background: rgba(255,255,255,0.2); font-size: 0.9rem; padding: 10px; flex-shrink: 0;">
+        Nhập tên khác ↩
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const bgMusic = new Audio('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.4;
+
+    const typingSfx = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+    typingSfx.volume = 0.2;
+
+    const popSfx = new Audio('https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3');
+    popSfx.volume = 0.3;
+
+    let isMuted = false;
+    const audioBtn = document.getElementById('audioBtn');
+
+    audioBtn.addEventListener('click', () => {
+      isMuted = !isMuted;
+      bgMusic.muted = isMuted;
+      typingSfx.muted = isMuted;
+      popSfx.muted = isMuted;
+      audioBtn.innerText = isMuted ? '🔇' : '🎵';
+    });
+
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const heartTypes = ['❤️', '💖', '✨'];
+    const fallingTypes = ['🌸', '💖', '💕', '✨'];
+
+    const fireworks = [];
+    const rainParticles = [];
+
+    class HeartFirework {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.size = Math.random() * 12 + 12;
+        this.symbol = heartTypes[Math.floor(Math.random() * heartTypes.length)];
+        this.alpha = 1;
+        this.decay = Math.random() * 0.03 + 0.02;
+        this.gravity = 0.1;
+      }
+
+      update() {
+        this.vx *= 0.94;
+        this.vy *= 0.94;
+        this.vy += this.gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= this.decay;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = Math.max(this.alpha, 0);
+        ctx.font = `${this.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.symbol, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    class RainParticle {
+      constructor() {
+        this.reset();
+        this.y = Math.random() * height;
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = -20;
+        this.size = Math.random() * 10 + 10;
+        this.speedY = Math.random() * 1.2 + 0.6;
+        this.symbol = fallingTypes[Math.floor(Math.random() * fallingTypes.length)];
+        this.opacity = Math.random() * 0.6 + 0.3;
+      }
+
+      update() {
+        this.y += this.speedY;
+        if (this.y > height + 20) this.reset();
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.font = `${this.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.symbol, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < 20; i++) {
+      rainParticles.push(new RainParticle());
+    }
+
+    function createFirework(x, y, count = 15) {
+      if (!isMuted) {
+        popSfx.currentTime = 0;
+        popSfx.play().catch(() => {});
+      }
+      for (let i = 0; i < count; i++) {
+        fireworks.push(new HeartFirework(x, y));
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      rainParticles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        const f = fireworks[i];
+        f.update();
+        f.draw();
+        if (f.alpha <= 0) fireworks.splice(i, 1);
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    window.addEventListener('pointerdown', (e) => {
+      createFirework(e.clientX, e.clientY, 12);
+    });
+
+    const btnStart = document.getElementById('btnStart');
+    const nameInput = document.getElementById('nameInput');
+    const tab1 = document.getElementById('tab1');
+    const tab2 = document.getElementById('tab2');
+    const recipientImg = document.getElementById('recipientImg');
+    const recipientName = document.getElementById('recipientName');
+    const wishesText = document.getElementById('wishesText');
+    const wishesBox = document.getElementById('wishesBox');
+    const cursor = document.getElementById('cursor');
+    const bgImage = document.getElementById('bgImage');
+
+    btnStart.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      
+      const name = nameInput.value.trim();
+      if (!name) {
+        alert('Vui lòng nhập tên của bạn nhé!');
+        return;
+      }
+
+      if (!isMuted) {
+        bgMusic.play().catch(() => {});
+      }
+
+      btnStart.innerText = "Đang mở thư...";
+      btnStart.disabled = true;
+
+      try {
+        const response = await fetch('/api/get-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          recipientImg.src = data.image_url;
+
+          if (data.bg_url) {
+            bgImage.style.backgroundImage = `url('${data.bg_url}')`;
+          }
+
+          tab1.classList.add('hidden');
+          setTimeout(() => {
+            tab1.style.display = 'none';
+            tab2.classList.remove('hidden');
+            createFirework(width / 2, height / 3, 25);
+            startTypingWishes(data.name, data.wishes);
+          }, 350);
+        } else {
+          alert(data.message || 'Không tìm thấy tên!');
+          btnStart.innerText = "Mở Thư Ngay ✨";
+          btnStart.disabled = false;
+        }
+      } catch (err) {
+        alert('Có lỗi kết nối server!');
+        btnStart.innerText = "Mở Thư Ngay ✨";
+        btnStart.disabled = false;
+      }
+    });
+
+    function startTypingWishes(name, wishesMsg) {
+      recipientName.innerHTML = `Chúc Mừng 20/10!<br>${name} 💕`;
+      let charIndex = 0;
+      wishesText.innerText = "";
+
+      function typeWriter() {
+        if (charIndex < wishesMsg.length) {
+          const char = wishesMsg.charAt(charIndex);
+          wishesText.innerText += char;
+          charIndex++;
+          
+          if (!isMuted && char.trim() !== '') {
+            typingSfx.currentTime = 0;
+            typingSfx.play().catch(() => {});
+          }
+
+          wishesBox.scrollTop = wishesBox.scrollHeight;
+          setTimeout(typeWriter, 50);
+        } else {
+          cursor.style.display = 'none';
+        }
+      }
+      setTimeout(typeWriter, 300);
+    }
+  </script>
+</body>
+</html>
